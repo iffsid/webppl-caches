@@ -1,0 +1,27 @@
+{
+  "name": "webppl-caches",
+  "version": "0.0.1",
+  "description": "Caching procedures for Webppl",
+  "//": {"main": "index.js"},
+  "dependencies": {
+    "node-localstorage": "^0.5.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/iffsid/webppl-caches.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iffsid/webppl-caches/issues"
+  },
+  "webppl": {
+    "headers": [
+      "src/caches.js"
+    ]
+  },
+  "homepage": "https://github.com/iffsid/webppl-caches",
+  "license": "MIT"
+}
