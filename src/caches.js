@@ -25,6 +25,58 @@ module.exports = function(env) {
     return k(s, undefined);
   }
 
+  function saveCacheToStore(s, k, a, label) {
+    if (label === undefined) {  // save all of __globalStore__
+      _.each(__globalCache__, function(v, k) {
+        localStorage.setItem(k, JSON.stringify(v));
+      });
+    } else {
+      localStorage.setItem(label, JSON.stringify(__globalCache__[label]));
+    }
+    return k(s, undefined);
+  }
+
+  function restoreCacheFromStore(s, k, a, label) {
+    var restoredString = localStorage.getItem(label);
+    if (restoredString !== null) {
+      __globalCache__[label] = isERPString(restoredString) ?
+        erpFromString(restoredString) :
+        JSON.parse(restoredString);
+    }
+    return k(s, undefined);
+  }
+
+  function cacheLS(s, k, a, label, f) {
+    if (__globalCache__[label] === undefined) {
+      __globalCache__[label] = {};
+    }
+    var c = __globalCache__[label];
+    var cf = function(s, k, a) {
+      var args = Array.prototype.slice.call(arguments, 3);
+      var stringedArgs = JSON.stringify(args);
+      var foundInCache = stringedArgs in c;
+      if (foundInCache) {
+        return k(s, c[stringedArgs]);
+      } else {                           // recompute
+        var newk = function(s, r) {
+          if (stringedArgs in c) {
+            // This can happen when cache is used on recursive functions
+            console.log('Already in cache:', stringedArgs);
+            if (JSON.stringify(c[stringedArgs]) !== JSON.stringify(r)) {
+              console.log('OLD AND NEW CACHE VALUE DIFFER!');
+              console.log('Old value:', c[stringedArgs]);
+              console.log('New value:', r);
+            }
+          }
+          c[stringedArgs] = r;
+          return k(s, r);
+        };
+        return f.apply(this, [s, newk, a].concat(args));
+      }
+    };
+    return k(s, cf);
+  }
+
   function stochasticCacheLS(s, k, a, label, f, aggregator, recompProb) {
     if (__globalCache__[label] === undefined) {
       __globalCache__[label] = {};
@@ -56,32 +108,12 @@ module.exports = function(env) {
     return k(s, cf);
   }
 
-  function saveCacheToStore(s, k, a, label) {
-    if (label === undefined) {  // save all of __globalStore__
-      _.each(__globalCache__, function(v, k) {
-        localStorage.setItem(k, JSON.stringify(v));
-      });
-    } else {
-      localStorage.setItem(label, JSON.stringify(__globalCache__[label]));
-    }
-    return k(s, undefined);
-  }
-
-  function restoreCacheFromStore(s, k, a, label) {
-    var restoredString = localStorage.getItem(label);
-    if (restoredString !== null) {
-      __globalCache__[label] = isERPString(restoredString) ?
-        erpFromString(restoredString) :
-        JSON.parse(restoredString);
-    }
-    return k(s, undefined);
-  }
-
   return {
     localStorageClearAll: localStorageClearAll,
     localStorageClear: localStorageClear,
-    stochasticCacheLS: stochasticCacheLS,
     saveCacheToStore: saveCacheToStore,
-    restoreCacheFromStore: restoreCacheFromStore
+    restoreCacheFromStore: restoreCacheFromStore,
+    cacheLS: cacheLS,
+    stochasticCacheLS: stochasticCacheLS
   };
 };
