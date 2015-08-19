@@ -40,7 +40,7 @@ module.exports = function(env) {
     var restoredString = localStorage.getItem(label);
     if (restoredString !== null) {
       __globalCache__[label] = _.chain(JSON.parse(restoredString))
-        .mapObject(function(v) {return _.has(v, 'erp') ? erpFromJSON(v.erp) : v;})
+        .mapObject(function(v) {return _.has(v, 'erp') ? erpFromJSON(v) : v;})
         .value();
     }
     return k(s, undefined);
