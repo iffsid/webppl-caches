@@ -1,12 +1,59 @@
-### Caching functions for Webppl:
+## Caching functions for Webppl
 
-* `stochasticCacheLS` is a _aggregative_, _stochastic_ cache
-* provides handles for saving (`saveCacheToStore`) and restoring
-(`restoreCacheFromStore`) the accumulated cache to `localStore`, along with
-means to clean up `localStore` when required (`localStorageClear` and
-`localStorageClearAll`).
+Provides the following conveniences for caching in [WebPPL](http://webppl.org/)
 
-#### Cache properties:
+#### `localStorageClearAll`
+
+Webppl function to completely clear out the localStorage
+
+#### `localStorageClear`
+
+Webppl function to clear out particular elements from the localStorage
+
+#### `saveCacheToStore`
+
+Webppl function to save a particular function's cache to localStorage
+
+#### `restoreCacheFromStore`
+
+Webppl function to restore particular function's cache from localStorage
+
+#### `cacheLS`
+
+Webppl function memoizer that enables saving/resoring with localStorage
+
+###### Example
+
+``` js
+var modelName = 'simple';
+
+var _simpleConditioning = function(p) {
+  return Enumerate(function() {
+    var x = flip(p);
+    var y = flip(p);
+    factor((x || y) ? 0 : -Infinity);
+    return x;
+  })
+};
+
+// localStorageClear(modelName) // clears out persistent cache when required
+restoreCacheFromStore(modelName);
+
+var simpleConditioning = cacheLS(modelName, _simpleConditioning);
+var p = 0.5;
+var result = simpleConditioning(p);
+
+saveCacheToStore(modelName);
+
+// First run of this program will compute the value
+// // Every subsequent invocation of program will reuse from cache
+console.log('Distribution for filp-probability = ' + p + ' is:');
+result.print();
+```
+
+#### `stochasticCacheLS`
+
+Webppl function memoizer that is _aggregative_ and _stochastic_.
 
 * _aggregative_: takes an aggregator that specifies how to combine previously
 cached values and new value
@@ -14,12 +61,7 @@ cached values and new value
   when a candidate value is present in the cache, whether to recompute and
   aggregate, or simply return cached value -- trading-off speed for convergence
 
-#### Example
-
-Put this package in a location where `webppl` can pick it up (instructions [here](https://github.com/probmods/webppl#packages)).
-If the following snippet is called `test.wppl`, then this package is used as:
-
-    webppl --require webppl-caches test.wppl
+###### Example
 
 ``` js
 var modelName = 'gaussianMean';
@@ -50,3 +92,7 @@ saveCacheToStore(modelName);
 // expection should converge to the mean over time (repeated invocation)
 console.log('Expected Value of Model:', result.mean);
 ```
+
+### Dependencies
+
+- [`node-localstorage`](https://www.npmjs.com/package/node-localstorage)
