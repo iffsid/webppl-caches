@@ -10,7 +10,7 @@ var localStorage = new LocalStorage('/tmp/_localStorage'); // (location, quota)
 var __globalCache__ = {};
 
 function isERPString(s) {
-  return s.search(/("val":).*("prob":)/) > 0
+  return s.search(/"erp":/) !== -1
 }
 
 module.exports = function(env) {
@@ -39,9 +39,9 @@ module.exports = function(env) {
   function restoreCacheFromStore(s, k, a, label) {
     var restoredString = localStorage.getItem(label);
     if (restoredString !== null) {
-      __globalCache__[label] = isERPString(restoredString) ?
-        erpFromString(restoredString) :
-        JSON.parse(restoredString);
+      __globalCache__[label] = _.chain(JSON.parse(restoredString))
+        .mapObject(function(v) {return _.has(v, 'erp') ? erpFromJSON(v.erp) : v;})
+        .value();
     }
     return k(s, undefined);
   }
