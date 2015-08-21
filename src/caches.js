@@ -9,8 +9,12 @@ var LocalStorage = require('node-localstorage').LocalStorage;
 var localStorage = new LocalStorage('/tmp/_localStorage'); // (location, quota)
 var __globalCache__ = {};
 
-function isERPString(s) {
-  return s.search(/"erp":/) !== -1
+function getHash(o) {           // used for fn args, so assumes array
+  if (_.isArray(o)) {
+    return JSON.stringify(_.map(o, getHash));
+  } else {
+    return _.has(o, 'toHash') ? o.toHash() : o;
+  }
 }
 
 module.exports = function(env) {
@@ -27,7 +31,7 @@ module.exports = function(env) {
 
   function saveCacheToStore(s, k, a, label) {
     if (label === undefined) {  // save all of __globalStore__
-      _.each(__globalCache__, function(v, k) {
+      _.forEach(__globalCache__, function(v, k) {
         localStorage.setItem(k, JSON.stringify(v));
       });
     } else {
@@ -39,9 +43,9 @@ module.exports = function(env) {
   function restoreCacheFromStore(s, k, a, label) {
     var restoredString = localStorage.getItem(label);
     if (restoredString !== null) {
-      __globalCache__[label] = _.chain(JSON.parse(restoredString))
-        .mapObject(function(v) {return _.has(v, 'erp') ? erpFromJSON(v) : v;})
-        .value();
+      __globalCache__[label] = _.mapObject(JSON.parse(restoredString), function(v) {
+        return _.has(v, 'erp') ? erpFromJSON(v) : v;
+      });
     }
     return k(s, undefined);
   }
@@ -53,7 +57,7 @@ module.exports = function(env) {
     var c = __globalCache__[label];
     var cf = function(s, k, a) {
       var args = Array.prototype.slice.call(arguments, 3);
-      var stringedArgs = JSON.stringify(args);
+      var stringedArgs = getHash(args);
       var foundInCache = stringedArgs in c;
       if (foundInCache) {
         return k(s, c[stringedArgs]);
@@ -84,7 +88,7 @@ module.exports = function(env) {
     var c = __globalCache__[label];
     var cf = function(s, k, a) {
       var args = Array.prototype.slice.call(arguments, 3);
-      var stringedArgs = JSON.stringify(args);
+      var stringedArgs = getHash(args);
       var foundInCache = stringedArgs in c;
       var recomp = Math.random() < recompProb;
       if (foundInCache && !recomp) {      // return stored value
